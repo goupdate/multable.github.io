@@ -1,1 +1,613 @@
-Kids html\js game to study multiplication table
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Таблица умножения</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .game-area {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .problems-container {
+            display: flex;
+            flex-direction: column;
+        }
+        .problems {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            width: 300px;
+            margin-bottom: 10px;
+        }
+        .problem {
+            width: 60px;
+            height: 60px;
+            background: #4CAF50;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: move;
+            border-radius: 5px;
+            font-size: 16px;
+            user-select: none;
+        }
+        .records-link {
+            align-self: flex-end;
+            margin-top: 10px;
+        }
+        .table-container {
+            flex: 1;
+        }
+        .multiplication-table {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+            background: #333;
+            padding: 2px;
+            border-radius: 5px;
+        }
+        .cell {
+            width: 60px;
+            height: 60px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .cell-value {
+            color: #ccc;
+            font-size: 30px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1976D2;
+        }
+        .timer {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .dragging {
+            opacity: 0.5;
+        }
+        .user-answer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            line-height: 1.2;
+            text-align: center;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+        }
+        .problem-expression {
+            font-weight: bold;
+        }
+        .problem-equals {
+            font-size: 14px;
+        }
+        .problem-result {
+            font-weight: bold;
+        }
+        .correct-cell {
+            background: #C8E6C9 !important;
+        }
+        .incorrect-cell {
+            background: #FFE0B2 !important;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .close {
+            font-size: 24px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #666;
+            padding: 5px;
+        }
+        .close:hover {
+            color: #000;
+        }
+        .result-grade {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .record-form {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .record-form input {
+            padding: 8px;
+            margin: 10px 0;
+            width: 200px;
+        }
+        .new-record {
+            color: #ff6b00;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+        }
+        .records-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .records-table th, .records-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .records-table th {
+            background-color: #f2f2f2;
+        }
+        .records-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .records-button {
+            margin-top: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Таблица умножения</h1>
+        <div class="timer">Время: <span id="time">0.0</span> сек</div>
+        
+        <div class="game-area">
+            <div class="problems-container">
+                <div class="problems" id="problemsContainer"></div>
+            </div>
+            <div class="table-container">
+                <div class="multiplication-table" id="table"></div>
+                <br>
+                <div align=right><a href="#" class="records-link" onclick="showRecordsModal(); return false;">Рекорды</a></div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button onclick="checkAnswers()">Готово</button>
+            <button onclick="resetGame()">Начать заново</button>
+        </div>
+    </div>
+
+    <div id="resultsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Результаты</h2>
+                <button class="close" onclick="closeModal()">×</button>
+            </div>
+            <div id="resultsContent"></div>
+        </div>
+    </div>
+
+    <div id="recordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Новый рекорд!</h2>
+                <button class="close" onclick="closeRecordModal()">×</button>
+            </div>
+            <div id="recordContent"></div>
+        </div>
+    </div>
+
+    <div id="recordsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div align="center"><h2>Таблица рекордов</h2></div>
+                <button class="close" onclick="closeRecordsModal()">×</button>
+            </div>
+            <div id="recordsContent"></div>
+        </div>
+    </div>
+
+    <font color="gray"><div align=right><p>Для Полины, Саши и Вики (c) ED 2025</p></div></font>
+
+    <script>
+        let startTime = null;
+        let timerInterval = null;
+        let problems = [];
+        const answers = {};
+        let currentCorrect = 0;
+        let currentTime = 0;
+
+        function getRecords() {
+            return JSON.parse(localStorage.getItem('multiplicationRecords') || '[]');
+        }
+
+        function setRecords(records) {
+            localStorage.setItem('multiplicationRecords', JSON.stringify(records));
+        }
+
+        function addRecord(name, correct, time) {
+            const records = getRecords();
+            const newRecord = {
+                name: name,
+                correct: correct,
+                time: time,
+                date: new Date().toISOString()
+            };
+            
+            records.push(newRecord);
+            records.sort((a, b) => {
+                if (b.correct !== a.correct) return b.correct - a.correct;
+                return a.time - b.time;
+            });
+            
+            const topRecords = records.slice(0, 10);
+            setRecords(topRecords);
+            return topRecords;
+        }
+
+        function isNewRecord(correct, time) {
+	    if (correct<1) return false;
+
+            const records = getRecords();
+            if (records.length < 10) return true;
+            
+            const worstRecord = records[records.length - 1];
+            if (correct > worstRecord.correct) return true;
+            if (correct === worstRecord.correct && time < worstRecord.time) return true;
+            return false;
+        }
+
+        function generateProblems() {
+            problems = [];
+            for (let i = 2; i <= 9; i++) {
+                for (let j = 2; j <= 9; j++) {
+                    problems.push({a: i, b: j, answer: i * j});
+                }
+            }
+            problems = problems.sort(() => Math.random() - 0.5);
+        }
+
+        function createTable() {
+            const table = document.getElementById('table');
+            table.innerHTML = '';
+            
+            for (let i = 2; i <= 9; i++) {
+                for (let j = 2; j <= 9; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.dataset.correctValue = i * j;
+                    
+                    const valueSpan = document.createElement('span');
+                    valueSpan.className = 'cell-value';
+                    valueSpan.textContent = i * j;
+                    cell.appendChild(valueSpan);
+                    
+                    cell.addEventListener('dragover', handleDragOver);
+                    cell.addEventListener('drop', handleDrop);
+                    
+                    table.appendChild(cell);
+                }
+            }
+        }
+
+        function createProblems() {
+            const container = document.getElementById('problemsContainer');
+            container.innerHTML = '';
+            
+            problems.forEach(problem => {
+                const problemEl = document.createElement('div');
+                problemEl.className = 'problem';
+                problemEl.textContent = `${problem.a}×${problem.b}`;
+                problemEl.draggable = true;
+                problemEl.dataset.a = problem.a;
+                problemEl.dataset.b = problem.b;
+                problemEl.id = `problem-${problem.a}-${problem.b}`;
+                
+                problemEl.addEventListener('dragstart', handleDragStart);
+                problemEl.addEventListener('dragend', handleDragEnd);
+                
+                container.appendChild(problemEl);
+            });
+        }
+
+        function handleDragStart(e) {
+            e.target.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', e.target.dataset.a + ',' + e.target.dataset.b);
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const data = e.dataTransfer.getData('text/plain').split(',');
+            const a = parseInt(data[0]);
+            const b = parseInt(data[1]);
+            const row = parseInt(e.target.dataset.row);
+            const col = parseInt(e.target.dataset.col);
+            const correctValue = parseInt(e.target.dataset.correctValue);
+            
+            if (e.target.classList.contains('cell')) {
+                const problemEl = document.getElementById(`problem-${a}-${b}`);
+                if (problemEl) {
+                    problemEl.remove();
+                }
+                
+                const existingAnswer = e.target.querySelector('.user-answer');
+                if (existingAnswer) {
+                    existingAnswer.remove();
+                }
+                
+                e.target.innerHTML = '';
+                
+                const userAnswer = document.createElement('div');
+                userAnswer.className = 'user-answer';
+                
+                const expression = document.createElement('div');
+                expression.className = 'problem-expression';
+                expression.textContent = `${a} × ${b}`;
+                
+                const equals = document.createElement('div');
+                equals.className = 'problem-equals';
+                equals.textContent = '=';
+                
+                const result = document.createElement('div');
+                result.className = 'problem-result';
+                result.textContent = a * b;
+                
+                userAnswer.appendChild(expression);
+                userAnswer.appendChild(equals);
+                userAnswer.appendChild(result);
+                e.target.appendChild(userAnswer);
+                
+                const isCorrect = (a * b) === correctValue;
+                if (isCorrect) {
+                    e.target.classList.add('correct-cell');
+                    e.target.classList.remove('incorrect-cell');
+                } else {
+                    e.target.classList.add('incorrect-cell');
+                    e.target.classList.remove('correct-cell');
+                }
+                
+                answers[`${row},${col}`] = a * b;
+            }
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = (Date.now() - startTime) / 1000;
+                document.getElementById('time').textContent = elapsed.toFixed(1);
+            }, 100);
+        }
+
+        function getGrade(correct, total) {
+            const percentage = (correct / total) * 100;
+            if (percentage >= 95) return {grade: 'Отлично', color: '#4CAF50'};
+            if (percentage >= 80) return {grade: 'Хорошо', color: '#2196F3'};
+            if (percentage >= 60) return {grade: 'Средне', color: '#FF9800'};
+            return {grade: 'Плохо', color: '#f44336'};
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
+        }
+
+        function showRecordsTable() {
+            const records = getRecords();
+            if (records.length === 0) return '<p>Рекордов пока нет</p>';
+            
+            return `
+                <table class="records-table">
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Имя</th>
+                            <th>Верных</th>
+                            <th>Время</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${records.map(record => `
+                            <tr>
+                                <td>${formatDate(record.date)}</td>
+                                <td>${record.name}</td>
+                                <td>${record.correct}</td>
+                                <td>${record.time.toFixed(1)} сек</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function showResultsModal(correct, total, time, errors) {
+            const grade = getGrade(correct, total);
+            const modal = document.getElementById('resultsModal');
+            const content = document.getElementById('resultsContent');
+            
+            content.innerHTML = `
+                <div class="result-grade" style="color: ${grade.color}">${grade.grade}</div>
+                <p>Правильно: ${correct} из ${total}</p>
+                <p>Время: ${time.toFixed(1)} сек</p>
+                ${errors.length > 0 ? `
+                    <div>
+                        <h3>Ошибки:</h3>
+                        <ul>
+                            ${errors.map(error => `<li style="color: red">${error}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+                <div class="records-button">
+                    <button onclick="closeModal(); showRecordsModal();">Рекорды</button>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        function showRecordModal(correct, time) {
+            const modal = document.getElementById('recordModal');
+            const content = document.getElementById('recordContent');
+            
+            content.innerHTML = `
+                <div class="new-record">${correct} верных ответов за ${time.toFixed(1)} секунд!</div>
+                <div class="record-form">
+                    <p>Введите имя:</p>
+                    <input type="text" id="recordName" placeholder="Ваше имя" maxlength="20">
+                    <br>
+                    <button onclick="saveRecord()">Сохранить</button>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        function showRecordsModal() {
+            const modal = document.getElementById('recordsModal');
+            const content = document.getElementById('recordsContent');
+            
+            content.innerHTML = showRecordsTable();
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('resultsModal').style.display = 'none';
+        }
+
+        function closeRecordModal() {
+            document.getElementById('recordModal').style.display = 'none';
+        }
+
+        function closeRecordsModal() {
+            document.getElementById('recordsModal').style.display = 'none';
+        }
+
+        function saveRecord() {
+            const name = document.getElementById('recordName').value.trim() || 'Аноним';
+            addRecord(name, currentCorrect, currentTime);
+            closeRecordModal();
+            showResultsModal(currentCorrect, 64, currentTime, []);
+        }
+
+        function checkAnswers() {
+            clearInterval(timerInterval);
+            currentTime = (Date.now() - startTime) / 1000;
+            
+            let correct = 0;
+            let total = 0;
+            const errors = [];
+            
+            for (let i = 2; i <= 9; i++) {
+                for (let j = 2; j <= 9; j++) {
+                    total++;
+                    const key = `${i},${j}`;
+                    const correctAnswer = i * j;
+                    const userAnswer = answers[key];
+                    
+                    if (userAnswer === correctAnswer) {
+                        correct++;
+                    } else if (userAnswer !== undefined) {
+                        errors.push(`${i} × ${j} = ${correctAnswer} а не ${userAnswer}`);
+                    }
+                }
+            }
+            
+            currentCorrect = correct;
+            
+            if (isNewRecord(correct, currentTime)) {
+                showRecordModal(correct, currentTime);
+            } else {
+                showResultsModal(correct, total, currentTime, errors);
+            }
+        }
+
+        function resetGame() {
+            clearInterval(timerInterval);
+            generateProblems();
+            createTable();
+            createProblems();
+            Object.keys(answers).forEach(key => delete answers[key]);
+            document.getElementById('time').textContent = '0.0';
+            
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                cell.classList.remove('correct-cell', 'incorrect-cell');
+                cell.innerHTML = '';
+                const valueSpan = document.createElement('span');
+                valueSpan.className = 'cell-value';
+                valueSpan.textContent = cell.dataset.correctValue;
+                cell.appendChild(valueSpan);
+            });
+            
+            startTimer();
+        }
+
+        generateProblems();
+        createTable();
+        createProblems();
+        startTimer();
+    </script>
+</body>
+</html>
