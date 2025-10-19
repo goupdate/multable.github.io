@@ -574,7 +574,28 @@
             const name = document.getElementById('recordName').value.trim() || 'Аноним';
             addRecord(name, currentCorrect, currentTime);
             closeRecordModal();
-            showResultsModal(currentCorrect, 64, currentTime, []);
+            
+            // После сохранения рекорда показываем результаты с ошибками
+            let correct = 0;
+            let total = 0;
+            const errors = [];
+            
+            for (let i = 2; i <= 9; i++) {
+                for (let j = 2; j <= 9; j++) {
+                    total++;
+                    const key = `${i},${j}`;
+                    const correctAnswer = i * j;
+                    const userAnswer = answers[key];
+                    
+                    if (userAnswer === correctAnswer) {
+                        correct++;
+                    } else if (userAnswer !== undefined) {
+                        errors.push(`${i} × ${j} = ${correctAnswer} а не ${userAnswer}`);
+                    }
+                }
+            }
+            
+            showResultsModal(correct, total, currentTime, errors);
         }
 
         function checkAnswers() {
